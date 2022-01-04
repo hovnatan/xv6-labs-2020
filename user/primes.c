@@ -10,28 +10,28 @@ int main(int argc, char *argv[]) {
   int k;
   int n = 0;
   if (fork() == 0) {
-    int i = 0;
     close(out);
     out = -1;
     while (1) {
       int n_read = read(in, &k, 4);
       if (n_read == 0) {
-        wait(0);
+        if (out != -1)
+          close(out);
         close(in);
+        wait(0);
         break;
       }
       if (n == 0) {
         n = k;
         printf("prime %d\n", n);
-      }
-      if (i != n) {
+      } else if (k % n != 0) {
         if (out == -1) {
           pipe(p);
           if (fork() == 0) {
+            // printf("forking\n");
             in = p[0];
             close(p[1]);
             n = 0;
-            i = 0;
             continue;
           } else {
             out = p[1];
@@ -39,10 +39,7 @@ int main(int argc, char *argv[]) {
           }
         }
         write(out, &k, 4);
-      } else {
-        i = 0;
       }
-      i += 1;
     }
   } else {
     close(in);
